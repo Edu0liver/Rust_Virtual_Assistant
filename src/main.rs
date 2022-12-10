@@ -35,36 +35,37 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     println!("{esc}c", esc = 27 as char);
     loop {
-    print!("> ");
-    stdout().flush().unwrap();
-    let mut user_text = String::new();
+        print!("> ");
+        stdout().flush().unwrap();
 
-    stdin().read_line(&mut user_text).expect("Failed to read line");
-    println!("");
+        let mut user_text = String::new();
 
-    let oai_request = OAIRequest {
-    prompt: format!("{}{}", preamble, user_text),
-    model: String::from("text-curie-001"),
-    max_tokens: 60,
-    temperature: 0,
-    };
+        stdin().read_line(&mut user_text)
+            .expect("Failed to read line");
+        println!("");
 
-    let body = Body::from(serde_json::to_vec(&oai_request)?);
-    
-    let req = Request::post(uri)
-    .header(header::CONTENT_TYPE, "application/json")
-    .header("Authorization", &auth_header_val)
-    .body(body)
-    .unwrap();
-    
-    let res = client.request(req).await?;
+        let oai_request = OAIRequest {
+            prompt: format!("{} {}", preamble, user_text),
+            model: String::from("text-curie-001"), //text-davinci-002
+            max_tokens: 60,
+            temperature: 0,
+        };
 
-    let body = hyper::body::aggregate(res).await?;
+        let body = Body::from(serde_json::to_vec(&oai_request)?);
+        
+        let req = Request::post(uri)
+            .header(header::CONTENT_TYPE, "application/json")
+            .header("Authorization", &auth_header_val)
+            .body(body)
+            .unwrap();
+        
+        let res = client.request(req).await?;
 
-    let json: OAIResponse = serde_json::from_reader(body.reader())?;
+        let body = hyper::body::aggregate(res).await?;
 
-    // Print the json
-    println!("🤖: {}", json.choices[0].text);
-    
+        let json: OAIResponse = serde_json::from_reader(body.reader())?;
+
+        // Print the json
+        println!("🤖: {}", json.choices[0].text);
     }
 }
